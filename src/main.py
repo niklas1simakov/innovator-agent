@@ -8,6 +8,8 @@ from urllib3.util import Retry
 
 load_dotenv()
 
+# General file for fast api entrypoint
+
 # Establish session for robust connection
 s = Session()
 retries = Retry(total=5, backoff_factor=0.1, status_forcelist=[500, 501, 502, 503, 504, 524])
