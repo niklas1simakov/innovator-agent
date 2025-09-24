@@ -9,3 +9,36 @@ dependencies = [
     "requests>=2.32.5",
     "urllib3>=2.5.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.1",
+]
+
+# Ruff linting and formating
+[tool.ruff]
+indent-width = 4
+line-length = 140
+
+[tool.ruff.lint]
+# Ruff linting rules: https://docs.astral.sh/ruff/rules/
+# E: pycodestyle errors (PEP 8)
+# F: pyflakes (basic Python errors)
+# I: isort (import sorting)
+# N: pep8-naming (naming conventions)
+# W: pycodestyle warnings
+# B: flake8-bugbear (catches likely bugs)
+# UP: pyupgrade (suggests Python upgrades)
+# PL: pylint (additional style checks)
+# RUF: Ruff-specific rules
+# ANN: flake8-annotations (type annotations)
+select = ["E", "F", "I", "N", "W", "B", "UP", "PL", "RUF", "ANN"]
+fixable = ["ALL"] # Enable auto-fixing for all fixable issues
+unfixable = []
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+docstring-code-format = true
+line-ending = "auto"
+
