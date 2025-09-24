@@ -17,3 +17,4 @@ class Document(BaseModel):
     authors: list[str]
     score: float
     institutions: list[str]
+    url: str
