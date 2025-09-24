@@ -60,7 +60,7 @@ r = s.post(URL, headers=headers, json={'query': query, 'variables': variables})
 
 # Handle response
 if r.status_code != 200:
-    print(f'Error executing\n{query}\non {url}')
+    print(f'Error executing\n{query}\non {URL}')
 else:
     response = r.json()
     # print structure of response
