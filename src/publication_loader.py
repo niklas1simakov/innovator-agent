@@ -11,7 +11,7 @@ class PublicationLoader:
         self.publication_date: str = ''
         self.authors: list[str] = []
         self.institutions: list[str] = []
-        self.api_url: str = self._normalize_url(search_result.url)
+        self.api_url: str = self._get_api_url(search_result.url)
         self._fetch_data()
 
     def get_document(self) -> Document:
@@ -27,16 +27,9 @@ class PublicationLoader:
             institutions=self.institutions,
         )
 
-    def _normalize_url(self, url: str) -> str:
+    def _get_api_url(self, id: str) -> str:
         """Return an OpenAlex API works URL given a web or API works URL."""
-        if not url:
-            raise ValueError('Empty OpenAlex URL')
-        if url.startswith('https://api.openalex.org/works/'):
-            return url
-        if url.startswith('https://openalex.org/works/'):
-            work_id = url.split('/works/')[-1]
-            return f'https://api.openalex.org/works/{work_id}'
-        raise ValueError(f'Invalid OpenAlex URL: {url}')
+        return f'https://api.openalex.org/works/{id}'
 
     def _fetch_data(self) -> None:
         """Fetch publication data from OpenAlex API."""
