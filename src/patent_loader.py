@@ -4,6 +4,8 @@ import xml.etree.ElementTree as ET
 
 import requests
 
+from src.models import DocumentData, SearchResult
+
 # Constants
 ABSTRACT_PREVIEW_LENGTH = 100
 HTTP_OK = 200
@@ -11,10 +13,25 @@ DATE_FORMAT_LENGTH = 8
 
 
 class PatentLoader:
-    def __init__(self, patent_id: str) -> None:
+    def __init__(self, search_result: SearchResult) -> None:
         """Initialize Patent with patent ID and fetch data from EPO API."""
-        self.patent_id = patent_id
+        self.patent_id = search_result.url.split('search?q=')[-1]
+        self.search_result = search_result
         self._fetch_data()
+
+    def get_document(self) -> DocumentData:
+        """Get the loaded patent document."""
+        return DocumentData(
+            id=self.search_result.id,
+            title=self.search_result.title,
+            type=self.search_result.type,
+            score=self.search_result.score,
+            url=self.search_result.url,
+            abstract=self.abstract,
+            publication_date=self.publication_date,
+            institutions=self.applicants,
+            authors=self.inventors,
+        )
 
     def _get_access_token(self) -> str:
         """Get access token from EPO API."""
@@ -191,9 +208,3 @@ class PatentLoader:
     def __repr__(self) -> str:
         """Detailed string representation of the patent."""
         return f"Patent(id='{self.patent_id}', title='{self.title}')"
-
-
-# Test code
-# if __name__ == '__main__':
-#     dotenv.load_dotenv()
-#     print(Patent('KR102656056B1'))
