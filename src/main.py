@@ -8,9 +8,9 @@ finder = DocumentFinder(abstract=abstract, title=title)
 results = finder.find_documents()
 
 # Print 5 first publications, their title, similarity score, and abstract
-for search_result in results[:5]:
-    if search_result.type == DocumentType.PUBLICATION:
-        print(search_result.title)
-        print(search_result.score)
-        doc = Document(search_result)
-        print(doc.abstract + '\n\n')
+publications = [result for result in results if result.type == DocumentType.PUBLICATION]
+for search_result in publications[:5]:
+    print(search_result.title)
+    print(search_result.score)
+    doc = Document(search_result)
+    print(doc.abstract + '\n\n')
