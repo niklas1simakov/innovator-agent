@@ -1,16 +1,51 @@
-from document import Document, DocumentType
-from document_finder import DocumentFinder
+from dotenv import load_dotenv
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# Example usage
-title = 'Airbags'
-abstract = 'Airbags are one of the most important safety gears in motor vehicles such as cars and SUVs. These are cushions built into a vehicle that are intended to inflate in case of a car accident in order to protect occupants from injuries by preventing them from striking the interior of vehicle during a crash.'
-finder = DocumentFinder(abstract=abstract, title=title)
-results = finder.find_documents()
+from src.document_analyzer import get_authors, get_novetly_analysis, get_publication_dates
+from src.document_processor import DocumentProcessor
+from src.models import AnalysisResponse
 
-# Print 5 first publications, their title, similarity score, and abstract
-publications = [result for result in results if result.type == DocumentType.PUBLICATION]
-for search_result in publications[:5]:
-    print(search_result.title)
-    print(search_result.score)
-    doc = Document(search_result)
-    print(doc.abstract + '\n\n')
+load_dotenv()
+
+# Create FastAPI application
+app = FastAPI(
+    title='Research System',
+    description='AI-powered system for patent analysis and research intelligence',
+    version='1.0.0',
+    docs_url='/docs',
+    redoc_url='/redoc',
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+
+
+@app.get('/health')
+async def health() -> dict:
+    return {'status': 'ok'}
+
+
+@app.get('/get_analysis')
+async def root(title: str, abstract: str) -> AnalysisResponse:
+    """Get full analysis of a document."""
+    finder = DocumentProcessor(abstract=abstract, title=title)
+    documents = finder.get_documents()
+
+    novelty_analysis = get_novetly_analysis(documents)
+    publication_dates = get_publication_dates(documents)
+    authors = get_authors(documents)
+
+    return AnalysisResponse(
+        documents=documents,
+        novelty_score=novelty_analysis.novelty_score,
+        novetly_analysis=novelty_analysis.novelty_analysis,
+        publication_dates=publication_dates,
+        authors=authors,
+    )

@@ -1,2 +1,2 @@
-class Patent:
+class PatentLoader:
     pass
