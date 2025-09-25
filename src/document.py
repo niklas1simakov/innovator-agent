@@ -1,7 +1,6 @@
 from enum import Enum
 
-from pydantic import BaseModel
-
+from patent_loader import Patent
 from publication_loader import Publication
 
 
@@ -10,12 +9,19 @@ class DocumentType(str, Enum):
     PUBLICATION = 'publication'
 
 
-class SearchResult(BaseModel):
+class SearchResult:
     id: str
     title: str
     type: DocumentType
     score: float
     url: str
+
+    def __init__(self, id: str, title: str, type: DocumentType, score: float, url: str) -> None:
+        self.id = id
+        self.title = title
+        self.type = type
+        self.score = score
+        self.url = url
 
 
 class Document(SearchResult):
@@ -31,16 +37,16 @@ class Document(SearchResult):
         )
 
         # Initialize document-specific fields from document parameter
-        self.abstract = self.get_document().abstract
-        self.publication_date = self.get_document().publication_date
-        self.authors = self.get_document().authors
-        self.institutions = self.get_document().institutions
+        doc = self.get_document()
+        self.abstract = doc.abstract
+        self.publication_date = doc.publication_date
+        self.authors = doc.authors
+        self.institutions = doc.institutions
 
     def get_document(self) -> object:
         if self.type == DocumentType.PUBLICATION:
-            return Publication(self.id)
+            return Publication(self.url)
         elif self.type == DocumentType.PATENT:
-            # Placeholder for Patent class, assuming similar structure to Publication
-            raise NotImplementedError('Patent class is not implemented yet.')
+            return Patent(self.url.split('search?q=')[-1])
         else:
             raise ValueError(f'Unknown document type: {self.type}')

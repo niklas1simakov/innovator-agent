@@ -5,15 +5,23 @@ ABSTRACT_PREVIEW_LENGTH = 100
 
 
 class Publication:
-    def __init__(self, publication_id: str) -> None:
-        """
-        Initialize a Publication object with data from OpenAlex API.
-
-        Args:
-            publication_id (str): Can be the short ID (W4409125250) or the full URL
-        """
-        self.publication_id = publication_id
+    def __init__(self, publication_url: str) -> None:
+        self.publication_url = publication_url
         self._fetch_data()
+
+    def _normalize_url(self, url: str) -> str:
+        """Convert OpenAlex work URL to API URL format."""
+        # Handle empty or incomplete URLs
+        if not url or url.endswith('/works/'):
+            raise ValueError(f'Incomplete OpenAlex URL: {url}')
+
+        # Convert web URL to API URL if needed
+        elif url.startswith('https://openalex.org/works/'):
+            work_id = url.split('/works/')[-1]
+            return f'https://api.openalex.org/works/{work_id}'
+
+        else:
+            raise ValueError(f'Invalid OpenAlex URL: {url}')
 
     def _fetch_data(self) -> None:
         """Fetch publication data from OpenAlex API."""
@@ -21,9 +29,12 @@ class Publication:
 
         try:
             data = self._get_api_data()
-            self._parse_fields(data)
+            if data:
+                self._parse_fields(data)
+        except ValueError as e:
+            print(f'Error: Invalid URL format: {e!s}')
         except Exception as e:
-            print(f'Warning: Failed to fetch publication data for {self.publication_id}: {e!s}')
+            print(f'Warning: Failed to fetch publication data for {self.publication_url}: {e!s}')
 
     def _initialize_fields(self) -> None:
         """Initialize all fields with default empty values."""
@@ -35,14 +46,17 @@ class Publication:
 
     def _get_api_data(self) -> dict:
         """Fetch data from OpenAlex API."""
-        if self.publication_id.startswith('http'):
-            url = self.publication_id
-        else:
-            url = f'https://api.openalex.org/works/{self.publication_id}'
-
-        r = requests.get(url)
+        r = requests.get(self._normalize_url(self.publication_url))
         r.raise_for_status()
-        return r.json()
+
+        # Check if response has content
+        if not r.text.strip():
+            raise ValueError('Empty response from API')
+
+        try:
+            return r.json()
+        except ValueError as e:
+            raise ValueError(f'Invalid JSON response: {e!s}') from e
 
     def _parse_fields(self, data: dict) -> None:
         """Parse publication fields from API data."""
@@ -79,7 +93,7 @@ class Publication:
         )
         return (
             f'Publication(\n'
-            f"  id='{self.publication_id}',\n"
+            f"  url='{self.publication_url}',\n"
             f"  title='{self.title}',\n"
             f"  abstract='{abstract_preview}',\n"
             f"  publication_date='{self.publication_date}',\n"
@@ -90,4 +104,4 @@ class Publication:
 
     def __repr__(self) -> str:
         """Detailed string representation of the publication."""
-        return f"Publication(id='{self.publication_id}', title='{self.title}')"
+        return f"Publication(url='{self.publication_url}', title='{self.title}')"
