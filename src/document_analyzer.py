@@ -137,14 +137,15 @@ class DocumentAnalyzer:
             output_type=DocumentAnalysis,
         )
 
-    def analyze_texts(self, doc1: DocumentData, doc2: DocumentData, doc2_type: DocumentType) -> DocumentAnalysis:
+    def analyze_texts(self, my_title: str, my_abstract: str, other_document: DocumentData, doc2_type: DocumentType) -> DocumentAnalysis:
         """
-        Analyze similarities and differences between two documents.
+        Analyze similarities and differences between your document and another document.
 
         Args:
-            doc1 (Document): First document to compare (your publication)
-            doc2 (Document): Second document to compare (other publication)
-            doc2_type (DocumentType): Type of the second document to choose appropriate prompt
+            my_title (str): Title of your document
+            my_abstract (str): Abstract of your document
+            other_document (DocumentData): Other document to compare against
+            doc2_type (DocumentType): Type of the other document to choose appropriate prompt
 
         Returns:
             DocumentAnalysis: Structured result with similarities and differences
@@ -152,57 +153,76 @@ class DocumentAnalyzer:
         # Choose prompt based on document type
         if doc2_type == DocumentType.PUBLICATION:
             # Format the publication prompt with actual abstracts
-            my_publication_text = f'Title: {doc1.title}\nAbstract: {doc1.abstract}'
-            other_publication_text = f'Title: {doc2.title}\nAbstract: {doc2.abstract}'
+            my_publication_text = f'Title: {my_title}\nAbstract: {my_abstract}'
+            other_publication_text = f'Title: {other_document.title}\nAbstract: {other_document.abstract}'
 
             full_prompt = PUBLICATION_COMPARISON_PROMPT.format(
                 my_publication_abstract=my_publication_text, other_publication_abstract=other_publication_text
             )
         else:
             # Format the patent prompt with actual abstracts
-            my_publication_text = f'Title: {doc1.title}\nAbstract: {doc1.abstract}'
-            patent_text = f'Title: {doc2.title}\nAbstract: {doc2.abstract}'
+            my_publication_text = f'Title: {my_title}\nAbstract: {my_abstract}'
+            patent_text = f'Title: {other_document.title}\nAbstract: {other_document.abstract}'
 
             full_prompt = PATENT_COMPARISON_PROMPT.format(my_publication_abstract=my_publication_text, patent_abstract=patent_text)
 
         result = self.agent.run_sync(full_prompt)
         return result
 
-    def get_analysis_dict(self, result) -> dict:
-        """Return analysis results as a dictionary."""
-        return {'similarities': result.output.similarities, 'differences': result.output.differences, 'full_result': result}
-
     def analyze_multiple_concurrent(
-        self, my_document: DocumentData, other_documents: list[DocumentData], max_workers: int = 5
-    ) -> list[dict]:
+        self, my_title: str, my_abstract: str, other_documents: list[DocumentData], max_workers: int = 5
+    ) -> None:
         """
-        Analyze one document against multiple others concurrently.
+        Analyze your document against multiple others concurrently and update DocumentData objects in-place.
 
         Args:
-            my_document (Document): Your reference document to compare against all others
-            other_documents (list[Document]): List of documents to compare against
+            my_title (str): Title of your document
+            my_abstract (str): Abstract of your document
+            other_documents (list[DocumentData]): List of documents to compare against
             max_workers (int): Maximum number of concurrent requests (default: 5)
 
         Returns:
-            list[dict]: List of analysis results
+            None: Updates the similarities and differences fields of the DocumentData objects in-place
         """
-        results = []
-
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all tasks
-            futures = [executor.submit(self.analyze_texts, my_document, doc, doc.type) for doc in other_documents]
+            # Submit all tasks with document indices for mapping results back
+            future_to_doc = {executor.submit(self.analyze_texts, my_title, my_abstract, doc, doc.type): doc for doc in other_documents}
 
-            # Collect results
-            for future in as_completed(futures):
+            # Collect results and update DocumentData objects
+            for future in as_completed(future_to_doc):
+                doc = future_to_doc[future]
                 result = future.result()
-                analysis_dict = self.get_analysis_dict(result)
-                results.append(analysis_dict)
 
-        return results
+                # Update the DocumentData object's fields directly
+                doc.similarities = result.output.similarities
+                doc.differences = result.output.differences
 
-    def _analyze_single_pair(self, doc1: DocumentData, doc2: DocumentData) -> DocumentAnalysis:
+    def analyze_multiple_sequential(self, my_title: str, my_abstract: str, other_documents: list[DocumentData], delay: float = 0.5) -> None:
+        """
+        Analyze your document against multiple others sequentially and update DocumentData objects in-place.
+
+        Args:
+            my_title (str): Title of your document
+            my_abstract (str): Abstract of your document
+            other_documents (list[DocumentData]): List of documents to compare against
+            delay (float): Delay between requests in seconds (default: 0.5)
+
+        Returns:
+            None: Updates the similarities and differences fields of the DocumentData objects in-place
+        """
+        for i, doc in enumerate(other_documents):
+            if i > 0:  # Don't delay before the first request
+                time.sleep(delay)
+
+            result = self.analyze_texts(my_title, my_abstract, doc, doc.type)
+
+            # Update the DocumentData object's fields directly
+            doc.similarities = result.output.similarities
+            doc.differences = result.output.differences
+
+    def _analyze_single_pair(self, my_title: str, my_abstract: str, other_document: DocumentData) -> DocumentAnalysis:
         """Helper method for concurrent analysis."""
-        return self.analyze_texts(doc1, doc2, doc2.type)
+        return self.analyze_texts(my_title, my_abstract, other_document, other_document.type)
 
 
 # Example usage
@@ -239,49 +259,47 @@ if __name__ == '__main__':
         url='https://pubmed.ncbi.nlm.nih.gov/789012',
     )
 
-    # Analyze documents with patent flag
+    # Analyze documents with new method signature
     import time
 
     start_time = time.time()
-    result = analyzer.analyze_texts(doc1, doc2, doc2.type)
+    result = analyzer.analyze_texts(doc1.title, doc1.abstract, doc2, doc2.type)
     end_time = time.time()
     single_processing_time = round(end_time - start_time, 2)
 
-    # Get results as dictionary
-    analysis_dict = analyzer.get_analysis_dict(result)
-
-    # Print the dictionary
+    # Print the results directly
     print('Single Analysis Results:')
-    print(f'Similarities: {analysis_dict["similarities"]}')
-    print(f'Differences: {analysis_dict["differences"]}')
+    print(f'Similarities: {result.output.similarities}')
+    print(f'Differences: {result.output.differences}')
 
     print('\n' + '=' * 60)
     print('CONCURRENT ANALYSIS EXAMPLE')
     print('=' * 60)
 
     # Create multiple documents to compare against
-    other_docs = [doc2] * 10  # Simple example with same doc
+    import copy
 
-    # Run concurrent analysis
+    other_docs = [copy.deepcopy(doc2) for _ in range(3)]  # Create separate copies for clarity
 
+    # Run concurrent analysis (updates documents in-place)
     start_time = time.time()
-    results = analyzer.analyze_multiple_concurrent(doc1, other_docs, max_workers=5)
+    analyzer.analyze_multiple_concurrent(doc1.title, doc1.abstract, other_docs, max_workers=5)
     end_time = time.time()
     multiple_processing_time = round(end_time - start_time, 2)
 
-    print(f'Analyzed {len(results)} documents concurrently')
-    print(f'First result similarities: {(results[0]["similarities"])}')
-    print(f'First result differences: {(results[0]["differences"])}')
+    print(f'Analyzed {len(other_docs)} documents concurrently')
+    print(f'First doc similarities: {other_docs[0].similarities}')
+    print(f'First doc differences: {other_docs[0].differences}')
 
     print('\n' + '=' * 60)
 
-    print(f'Second result similarities: {(results[1]["similarities"])}')
-    print(f'Second result differences: {(results[1]["differences"])}')
+    print(f'Second doc similarities: {other_docs[1].similarities}')
+    print(f'Second doc differences: {other_docs[1].differences}')
 
     print('\n' + '=' * 60)
 
-    print(f'Third result similarities: {(results[2]["similarities"])}')
-    print(f'Third result differences: {(results[2]["differences"])}')
+    print(f'Third doc similarities: {other_docs[2].similarities}')
+    print(f'Third doc differences: {other_docs[2].differences}')
 
     print('\n' + '=' * 60)
 

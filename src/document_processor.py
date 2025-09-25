@@ -55,7 +55,7 @@ class DocumentProcessor:
                 {'key': 'title', 'value': self.title},
                 {'key': 'abstract', 'value': self.abstract},
             ],
-            'amount': 10,
+            'amount': 5,
             'indices': ['patents', 'publications'],
         }
 
@@ -98,4 +98,4 @@ class DocumentProcessor:
 
     def _analyze_documents(self) -> None:
         analyzer = DocumentAnalyzer()
-        self.documents = analyzer.analyze(documents=self.documents)
+        analyzer.analyze_multiple_concurrent(self.title, self.abstract, self.documents)
