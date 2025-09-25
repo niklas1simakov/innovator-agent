@@ -23,6 +23,7 @@ class DocumentData(SearchResult):
     institutions: list[str] | None = None
     similarities: list[str] | None = None
     differences: list[str] | None = None
+    novelty_score: float | None = None
 
 
 class NoveltyAnalysis(BaseModel):
@@ -38,6 +39,6 @@ class AuthorData(BaseModel):
 class AnalysisResponse(BaseModel):
     documents: list[DocumentData]
     novelty_score: float
-    novetly_analysis: str
+    novelty_analysis: str
     publication_dates: list[str]
     authors: list[AuthorData]
