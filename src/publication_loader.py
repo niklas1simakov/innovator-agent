@@ -1,32 +1,45 @@
 import requests
 
-# Constants
-ABSTRACT_PREVIEW_LENGTH = 100
+from document_types import Document, DocumentType, SearchResult
 
 
-class Publication:
-    def __init__(self, publication_url: str) -> None:
-        self.publication_url = publication_url
+class PublicationLoader:
+    def __init__(self, search_result: SearchResult) -> None:
+        self.search_result = search_result
+        self.title: str = ''
+        self.abstract: str = ''
+        self.publication_date: str = ''
+        self.authors: list[str] = []
+        self.institutions: list[str] = []
+        self.api_url: str = self._normalize_url(search_result.url)
         self._fetch_data()
 
-    def _normalize_url(self, url: str) -> str:
-        """Convert OpenAlex work URL to API URL format."""
-        # Handle empty or incomplete URLs
-        if not url or url.endswith('/works/'):
-            raise ValueError(f'Incomplete OpenAlex URL: {url}')
+    def get_document(self) -> Document:
+        return Document(
+            id=self.search_result.id,
+            type=DocumentType.PUBLICATION,
+            score=self.search_result.score,
+            url=self.search_result.url,
+            title=self.title or self.search_result.title,
+            abstract=self.abstract,
+            publication_date=self.publication_date,
+            authors=self.authors,
+            institutions=self.institutions,
+        )
 
-        # Convert web URL to API URL if needed
-        elif url.startswith('https://openalex.org/works/'):
+    def _normalize_url(self, url: str) -> str:
+        """Return an OpenAlex API works URL given a web or API works URL."""
+        if not url:
+            raise ValueError('Empty OpenAlex URL')
+        if url.startswith('https://api.openalex.org/works/'):
+            return url
+        if url.startswith('https://openalex.org/works/'):
             work_id = url.split('/works/')[-1]
             return f'https://api.openalex.org/works/{work_id}'
-
-        else:
-            raise ValueError(f'Invalid OpenAlex URL: {url}')
+        raise ValueError(f'Invalid OpenAlex URL: {url}')
 
     def _fetch_data(self) -> None:
         """Fetch publication data from OpenAlex API."""
-        self._initialize_fields()
-
         try:
             data = self._get_api_data()
             if data:
@@ -34,19 +47,11 @@ class Publication:
         except ValueError as e:
             print(f'Error: Invalid URL format: {e!s}')
         except Exception as e:
-            print(f'Warning: Failed to fetch publication data for {self.publication_url}: {e!s}')
-
-    def _initialize_fields(self) -> None:
-        """Initialize all fields with default empty values."""
-        self.title = ''
-        self.abstract = ''
-        self.publication_date = ''
-        self.authors = []
-        self.institutions = []
+            print(f'Warning: Failed to fetch publication data for {self.api_url}: {e!s}')
 
     def _get_api_data(self) -> dict:
         """Fetch data from OpenAlex API."""
-        r = requests.get(self._normalize_url(self.publication_url))
+        r = requests.get(self.api_url, timeout=10)
         r.raise_for_status()
 
         # Check if response has content
@@ -85,23 +90,3 @@ class Publication:
             for i in indexes:
                 positions.append((i, word))
         return ' '.join(word for _, word in sorted(positions))
-
-    def __str__(self) -> str:
-        """String representation of the publication."""
-        abstract_preview = (
-            self.abstract[:ABSTRACT_PREVIEW_LENGTH] + '...' if len(self.abstract) > ABSTRACT_PREVIEW_LENGTH else self.abstract
-        )
-        return (
-            f'Publication(\n'
-            f"  url='{self.publication_url}',\n"
-            f"  title='{self.title}',\n"
-            f"  abstract='{abstract_preview}',\n"
-            f"  publication_date='{self.publication_date}',\n"
-            f'  authors={self.authors},\n'
-            f'  institutions={self.institutions}\n'
-            f')'
-        )
-
-    def __repr__(self) -> str:
-        """Detailed string representation of the publication."""
-        return f"Publication(url='{self.publication_url}', title='{self.title}')"
