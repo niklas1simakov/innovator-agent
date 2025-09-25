@@ -26,3 +26,5 @@ class Document(SearchResult):
     publication_date: str
     authors: list[str]
     institutions: list[str]
+    similarities: list[str] | None
+    differences: list[str] | None
