@@ -53,15 +53,10 @@ if analysis is not None:
     app.include_router(analysis.router, prefix='/api/v1', tags=['analysis'])
 
 
-@app.get('/')
+@app.get('/get_analysis')
 async def root() -> None:
-    """Root endpoint with basic API information."""
-    return {
-        'message': 'Research System API',
-        'version': '1.0.0',
-        'docs': '/docs',
-        'health': '/api/v1/health',
-    }
+    """Get full analysis of a document."""
+    return {'add your analysis here'}
 
 
 @app.get('/hello')
