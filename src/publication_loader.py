@@ -12,9 +12,13 @@ class PublicationLoader:
         self.authors: list[str] = []
         self.institutions: list[str] = []
         self.api_url: str = self._get_api_url(search_result.id)
+        self.data_fetch_successful = False
         self._fetch_data()
 
-    def get_document(self) -> DocumentData:
+    def get_document(self) -> DocumentData | None:
+        if not self.data_fetch_successful:
+            return None
+
         return DocumentData(
             id=self.search_result.id,
             type=DocumentType.PUBLICATION,
@@ -37,10 +41,13 @@ class PublicationLoader:
             data = self._get_api_data()
             if data:
                 self._parse_fields(data)
+                self.data_fetch_successful = True
         except ValueError as e:
             print(f'Error: Invalid URL format: {e!s}')
+            self.data_fetch_successful = False
         except Exception as e:
             print(f'Warning: Failed to fetch publication data for {self.api_url}: {e!s}')
+            self.data_fetch_successful = False
 
     def _get_api_data(self) -> dict:
         """Fetch data from OpenAlex API."""
