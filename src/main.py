@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.document_analyzer import get_authors, get_novetly_analysis, get_publication_dates
+from src.document_analyzer import get_authors, get_novelty_analysis, get_publication_dates
 from src.document_processor import DocumentProcessor
 from src.models import AnalysisResponse
 
@@ -38,14 +38,14 @@ async def root(title: str, abstract: str) -> AnalysisResponse:
     finder = DocumentProcessor(abstract=abstract, title=title)
     documents = finder.get_documents()
 
-    novelty_analysis = get_novetly_analysis(documents)
+    novelty_analysis = get_novelty_analysis(documents)
     publication_dates = get_publication_dates(documents)
     authors = get_authors(documents)
 
     return AnalysisResponse(
         documents=documents,
         novelty_score=novelty_analysis.novelty_score,
-        novetly_analysis=novelty_analysis.novelty_analysis,
+        novelty_analysis=novelty_analysis.novelty_analysis,
         publication_dates=publication_dates,
         authors=authors,
     )

@@ -3,7 +3,7 @@ import time
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.providers.anthropic import AnthropicProvider
@@ -48,6 +48,14 @@ Critically assess what makes your work genuinely novel compared to this patent o
 - Areas where this patent has scope limitations that your work exploits or extends beyond
 - Critical gaps in this patent's coverage that your work addresses with genuine innovation
 
+**NOVELTY_SCORE:**
+Provide a single integer score from 0-100 indicating how novel your work is compared to this patent:
+- 0-20: Highly overlapping, significant IP risk, minimal novelty
+- 21-40: Substantial overlap, moderate IP concerns, limited novelty  
+- 41-60: Some overlap, manageable IP risk, moderate novelty
+- 61-80: Limited overlap, low IP risk, high novelty
+- 81-100: Minimal overlap, negligible IP risk, exceptional novelty
+
 Focus on: How does your work compare to this specific patent? What's already covered by this patent versus your genuine innovations? What are the IP implications of this patent for your work's commercialization potential?
 """
 
@@ -75,18 +83,35 @@ Identify areas where this publication already covers work similar to yours, pote
 Critically assess your genuine contributions compared to this publication versus incremental changes:
 - Substantial methodological innovations in your work not attempted in this publication
 - Novel problem angles or applications your work explores beyond this publication's scope
-- Significant performance improvements your work achieves over this publication's results
+- Significant performance improvements your work achieve over this publication's results
 - New theoretical insights or conceptual breakthroughs your work provides beyond this publication
 - Different experimental conditions in your work that reveal knowledge not found in this publication
 - Enhanced scope, scale, or generalizability your work offers compared to this publication
 - Critical gaps in this publication's work that your research addresses with genuine innovation
 
+**NOVELTY_SCORE:**
+Provide a single integer score from 0-100 indicating how novel your work is compared to this publication:
+- 0-20: Nearly identical work, minimal novelty, potentially redundant research
+- 21-40: Highly similar work, limited novelty, incremental improvements only
+- 41-60: Moderate similarity, reasonable novelty, notable but not groundbreaking advances
+- 61-80: Limited similarity, high novelty, significant new contributions
+- 81-100: Minimal similarity, exceptional novelty, groundbreaking new research
+
 Focus on: How does your work specifically compare to this publication? What knowledge does this publication already contribute versus your unique additions? How significant is your work's advancement beyond what this publication has already established in the field?
 """
 
 
-def get_novetly_analysis(documents: list[DocumentData]) -> NoveltyAnalysis:
-    return NoveltyAnalysis(novelty_score=0.0, novelty_analysis='')
+def get_novelty_analysis(documents: list[DocumentData]) -> NoveltyAnalysis:
+    # Extract novelty scores from documents (only if they have been analyzed)
+    novelty_scores = [doc.novelty_score for doc in documents if hasattr(doc, 'novelty_score') and doc.novelty_score is not None]
+
+    # Calculate average
+    if not novelty_scores:
+        average_score = 0.0
+    else:
+        average_score = sum(novelty_scores) / len(novelty_scores)
+
+    return NoveltyAnalysis(novelty_score=average_score, novelty_analysis='')
 
 
 def get_publication_dates(documents: list[DocumentData]) -> list[str]:
@@ -116,6 +141,7 @@ def get_authors(documents: list[DocumentData]) -> list[AuthorData]:
 class DocumentAnalysis(BaseModel):
     similarities: list[str]
     differences: list[str]
+    novelty_score: float = Field(ge=0.0, le=100.0)
 
 
 class DocumentAnalyzer:
@@ -182,7 +208,7 @@ class DocumentAnalyzer:
             max_workers (int): Maximum number of concurrent requests (default: 5)
 
         Returns:
-            None: Updates the similarities and differences fields of the DocumentData objects in-place
+            None: Updates the similarities, differences, and novelty_score fields of the DocumentData objects in-place
         """
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks with document indices for mapping results back
@@ -196,6 +222,7 @@ class DocumentAnalyzer:
                 # Update the DocumentData object's fields directly
                 doc.similarities = result.output.similarities
                 doc.differences = result.output.differences
+                doc.novelty_score = result.output.novelty_score
 
     def analyze_multiple_sequential(self, my_title: str, my_abstract: str, other_documents: list[DocumentData], delay: float = 0.5) -> None:
         """
@@ -219,6 +246,11 @@ class DocumentAnalyzer:
             # Update the DocumentData object's fields directly
             doc.similarities = result.output.similarities
             doc.differences = result.output.differences
+
+    def calculate_average_novelty_score(self, novelty_scores: list[float]) -> float:
+        if not novelty_scores:
+            return 0.0
+        return sum(novelty_scores) / len(novelty_scores)
 
     def _analyze_single_pair(self, my_title: str, my_abstract: str, other_document: DocumentData) -> DocumentAnalysis:
         """Helper method for concurrent analysis."""
