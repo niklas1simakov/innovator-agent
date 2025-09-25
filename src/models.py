@@ -20,9 +20,9 @@ class DocumentData(SearchResult):
     abstract: str
     publication_date: str
     authors: list[str]
-    institutions: list[str]
-    similarities: list[str] | None
-    differences: list[str] | None
+    institutions: list[str] | None = None
+    similarities: list[str] | None = None
+    differences: list[str] | None = None
 
 
 class NoveltyAnalysis(BaseModel):

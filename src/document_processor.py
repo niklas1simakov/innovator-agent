@@ -56,7 +56,8 @@ class DocumentProcessor:
                 {'key': 'abstract', 'value': self.abstract},
             ],
             'amount': 50,
-            'indices': ['patents', 'publications'],
+            'indices': ['publications'],
+            # 'indices': ['patents', 'publications'],
         }
 
         r = s.post(

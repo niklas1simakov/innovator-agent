@@ -11,7 +11,7 @@ class PublicationLoader:
         self.publication_date: str = ''
         self.authors: list[str] = []
         self.institutions: list[str] = []
-        self.api_url: str = self._get_api_url(search_result.url)
+        self.api_url: str = self._get_api_url(search_result.id)
         self._fetch_data()
 
     def get_document(self) -> DocumentData:
