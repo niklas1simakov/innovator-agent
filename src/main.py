@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from document_analyzer import get_authors, get_novetly_analysis, get_publication_dates
+from document_processor import DocumentProcessor
+from models import AnalysisResponse
+
 # Create FastAPI application
 app = FastAPI(
     title='Research System',
@@ -26,6 +30,19 @@ async def health() -> dict:
 
 
 @app.get('/get_analysis')
-async def root() -> None:
+async def root(title: str, abstract: str) -> AnalysisResponse:
     """Get full analysis of a document."""
-    return {'add your analysis here'}
+    finder = DocumentProcessor(abstract=abstract, title=title)
+    documents = finder.get_documents()
+
+    novelty_analysis = get_novetly_analysis(documents)
+    publication_dates = get_publication_dates(documents)
+    authors = get_authors(documents)
+
+    return AnalysisResponse(
+        documents=documents,
+        novelty_score=novelty_analysis.novelty_score,
+        novetly_analysis=novelty_analysis.novelty_analysis,
+        publication_dates=publication_dates,
+        authors=authors,
+    )

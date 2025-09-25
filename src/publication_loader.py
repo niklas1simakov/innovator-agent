@@ -1,6 +1,6 @@
 import requests
 
-from document_types import Document, DocumentType, SearchResult
+from models import DocumentData, DocumentType, SearchResult
 
 
 class PublicationLoader:
@@ -14,8 +14,8 @@ class PublicationLoader:
         self.api_url: str = self._get_api_url(search_result.url)
         self._fetch_data()
 
-    def get_document(self) -> Document:
-        return Document(
+    def get_document(self) -> DocumentData:
+        return DocumentData(
             id=self.search_result.id,
             type=DocumentType.PUBLICATION,
             score=self.search_result.score,
