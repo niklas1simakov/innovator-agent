@@ -207,6 +207,10 @@ class DocumentAnalyzer:
 
 # Example usage
 if __name__ == '__main__':
+    import dotenv
+
+    dotenv.load_dotenv()
+
     # Initialize analyzer
     analyzer = DocumentAnalyzer()
 
