@@ -4,7 +4,21 @@ from src.models import AuthorData, DocumentData, NoveltyAnalysis
 
 
 def get_novetly_analysis(documents: list[DocumentData]) -> NoveltyAnalysis:
-    return NoveltyAnalysis(novelty_score=0.0, novelty_analysis='')
+    if not documents:
+        return NoveltyAnalysis(novelty_score=0.0, novelty_analysis='No documents to analyze')
+
+    # Sort documents by similarity score in descending order
+    sorted_documents = sorted(documents, key=lambda doc: doc.score, reverse=True)
+
+    # Take the first 10 elements (or all if less than 10)
+    top_documents = sorted_documents[:10]
+
+    # Calculate the average score as novelty_score
+    novelty_score = 1 - (sum(doc.score for doc in top_documents) / len(documents))
+
+    novelty_analysis = f'Novelty score calculated from top {len(top_documents)} documents with highest similarity scores'
+
+    return NoveltyAnalysis(novelty_score=novelty_score, novelty_analysis=novelty_analysis)
 
 
 def get_publication_dates(documents: list[DocumentData]) -> list[str]:
