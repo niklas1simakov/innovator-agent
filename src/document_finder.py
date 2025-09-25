@@ -6,14 +6,6 @@ from urllib3.util import Retry
 
 from document_types import DocumentType, SearchResult
 
-# API settings
-TOKEN = os.getenv('API_KEY_LOGIC_MILL')
-URL = 'https://api.logic-mill.net/api/v1/graphql/'
-headers = {
-    'content-type': 'application/json',
-    'Authorization': 'Bearer ' + TOKEN,
-}
-
 
 class DocumentFinder:
     def __init__(self, title: str, abstract: str) -> None:
@@ -29,11 +21,18 @@ class DocumentFinder:
 
         query = self.build_query(title=self.title, abstract=self.abstract)
         # Send request
-        r = s.post(URL, headers=headers, json={'query': query})
+        r = s.post(
+            'https://api.logic-mill.net/api/v1/graphql/',
+            headers={
+                'content-type': 'application/json',
+                'Authorization': 'Bearer ' + os.getenv('API_KEY_LOGIC_MILL'),
+            },
+            json={'query': query},
+        )
 
         # Handle response
         if r.status_code != 200:
-            print(f'Error executing\n{query}\non {URL}')
+            print(f'Error executing\n{query}')
         else:
             search_results = []
             response = r.json()
