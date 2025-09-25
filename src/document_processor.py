@@ -86,9 +86,14 @@ class DocumentProcessor:
         return search_results
 
     def _load_documents(self) -> list[DocumentData]:
-        return [self._load_single_document(search_result) for search_result in self.search_results]
+        documents = []
+        for search_result in self.search_results:
+            document = self._load_single_document(search_result)
+            if document is not None:
+                documents.append(document)
+        return documents
 
-    def _load_single_document(self, search_result: SearchResult) -> DocumentData:
+    def _load_single_document(self, search_result: SearchResult) -> DocumentData | None:
         if search_result.type == DocumentType.PUBLICATION:
             return PublicationLoader(search_result).get_document()
         elif search_result.type == DocumentType.PATENT:

@@ -17,10 +17,14 @@ class PatentLoader:
         """Initialize Patent with patent ID and fetch data from EPO API."""
         self.patent_id = search_result.url.split('search?q=')[-1]
         self.search_result = search_result
+        self.data_fetch_successful = False
         self._fetch_data()
 
-    def get_document(self) -> DocumentData:
+    def get_document(self) -> DocumentData | None:
         """Get the loaded patent document."""
+        if not self.data_fetch_successful:
+            return None
+
         return DocumentData(
             id=self.search_result.id,
             title=self.search_result.title,
@@ -58,8 +62,10 @@ class PatentLoader:
             xml_data = self._get_patent_data()
             if xml_data:
                 self._parse_xml_data(xml_data)
+                self.data_fetch_successful = True
         except Exception as e:
             print(f'Warning: Failed to fetch patent data for {self.patent_id}: {e!s}')
+            self.data_fetch_successful = False
 
     def _initialize_fields(self) -> None:
         """Initialize all fields with default empty values."""
