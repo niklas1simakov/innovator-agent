@@ -5,7 +5,8 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-from document_types import DocumentData, DocumentType, SearchResult
+from document_analyzer import DocumentAnalyzer
+from models import DocumentData, DocumentType, SearchResult
 from patent_loader import PatentLoader
 from publication_loader import PublicationLoader
 
@@ -16,6 +17,10 @@ class DocumentProcessor:
         self.title = title
         self.search_results = self._find_documents()
         self.documents = self._load_documents()
+        self._analyze_documents()
+
+    def get_documents(self) -> list[DocumentData]:
+        return self.documents
 
     def _find_documents(self) -> list[SearchResult]:
         # Establish session for robust connection
@@ -80,8 +85,8 @@ class DocumentProcessor:
                 search_results.append(sr)
         return search_results
 
-    def _load_documents(self, search_results: list[SearchResult]) -> list[DocumentData]:
-        return [self._load_single_document(search_result) for search_result in search_results]
+    def _load_documents(self) -> list[DocumentData]:
+        return [self._load_single_document(search_result) for search_result in self.search_results]
 
     def _load_single_document(self, search_result: SearchResult) -> DocumentData:
         if search_result.type == DocumentType.PUBLICATION:
@@ -90,3 +95,7 @@ class DocumentProcessor:
             return PatentLoader(search_result).get_document()
         else:
             raise ValueError(f'Unknown document type: {search_result.type}')
+
+    def _analyze_documents(self) -> None:
+        analyzer = DocumentAnalyzer()
+        self.documents = analyzer.analyze(documents=self.documents)
