@@ -1,4 +1,4 @@
-from models import AuthorData, DocumentData, NoveltyAnalysis
+from src.models import AuthorData, DocumentData, NoveltyAnalysis
 
 
 def get_novetly_analysis(documents: list[DocumentData]) -> NoveltyAnalysis:

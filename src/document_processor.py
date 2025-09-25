@@ -5,10 +5,10 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-from document_analyzer import DocumentAnalyzer
-from models import DocumentData, DocumentType, SearchResult
-from patent_loader import PatentLoader
-from publication_loader import PublicationLoader
+from src.document_analyzer import DocumentAnalyzer
+from src.models import DocumentData, DocumentType, SearchResult
+from src.patent_loader import PatentLoader
+from src.publication_loader import PublicationLoader
 
 
 class DocumentProcessor:

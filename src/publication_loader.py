@@ -1,6 +1,6 @@
 import requests
 
-from models import DocumentData, DocumentType, SearchResult
+from src.models import DocumentData, DocumentType, SearchResult
 
 
 class PublicationLoader:
