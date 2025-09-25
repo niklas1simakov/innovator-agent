@@ -1,9 +1,12 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.document_analyzer import get_authors, get_novetly_analysis, get_publication_dates
 from src.document_processor import DocumentProcessor
 from src.models import AnalysisResponse
+
+load_dotenv()
 
 # Create FastAPI application
 app = FastAPI(
