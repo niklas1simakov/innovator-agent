@@ -5,6 +5,7 @@ import SearchForm from "@/components/input/SearchForm";
 import ResultsLayout from "@/components/results/ResultsLayout";
 import { AnalysisSidebar } from "@/components/sidebar/AnalysisSidebar";
 import { MobileSidebar } from "@/components/sidebar/MobileSidebar";
+import { VoiceChat } from "@/components/voice/VoiceChat";
 import { useAnalysisHistory } from "@/hooks/useAnalysisHistory";
 import { useSearchResults } from "@/hooks/useSearchResults";
 import { useUIState } from "@/hooks/useUIState";
@@ -164,37 +165,51 @@ const Index = () => {
   const renderContent = () => {
     if (viewMode === "input") {
       return (
-        <div className="flex-1 flex items-center justify-center p-4">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-8">
           <SearchForm 
             onSubmit={handleSearch} 
             isLoading={isLoading}
             className="animate-fade-in"
           />
+          <VoiceChat />
         </div>
       );
     }
 
     if (activeAnalysis) {
       return (
-        <div className="flex-1">
-          <ResultsLayout 
-            analysis={activeAnalysis}
-            onEditSearch={handleEditSearch}
-            onUpdateAnalysis={handleUpdateAnalysis}
-            onCreateNewAnalysis={handleCreateNewAnalysis}
-          />
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1">
+            <ResultsLayout 
+              analysis={activeAnalysis}
+              onEditSearch={handleEditSearch}
+              onUpdateAnalysis={handleUpdateAnalysis}
+              onCreateNewAnalysis={handleCreateNewAnalysis}
+            />
+          </div>
+          <div className="border-t bg-background/95 backdrop-blur-sm p-4">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-2">
+                <p className="text-sm text-muted-foreground font-medium">
+                  🎯 Voice Assistant - Ask questions about your research analysis
+                </p>
+              </div>
+              <VoiceChat />
+            </div>
+          </div>
         </div>
       );
     }
 
     // Fallback to input if no active analysis
     return (
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 gap-8">
         <SearchForm 
           onSubmit={handleSearch} 
           isLoading={isLoading}
           className="animate-fade-in"
         />
+        <VoiceChat />
       </div>
     );
   };
