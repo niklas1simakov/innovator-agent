@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Analysis, AnalysisInput, AnalysisResult } from "@/types/analysis";
 import { SearchResults, ResearchItem } from "@/types/research";
-import { useSearchResults } from "./useSearchResults";
+import { fetchAnalysis, BackendDocument } from "@/lib/api";
 
 const STORAGE_KEY = "valorize.history.v1";
 
@@ -84,111 +84,61 @@ export function useAnalysisHistory() {
     ));
   };
 
-  // New function to update analysis and recompute results
-  const updateAnalysisWithRecompute = (id: string, updates: { title: string; abstract: string }) => {
+  // New function to update analysis and recompute results via backend
+  const updateAnalysisWithRecompute = async (id: string, updates: { title: string; abstract: string }) => {
     const analysis = analyses.find(a => a.input.id === id);
     if (!analysis) return;
 
-    // Create updated input with new timestamp
     const updatedInput: AnalysisInput = {
       ...analysis.input,
       ...updates,
       updatedAt: new Date().toISOString()
     };
 
-    // Generate mock data for recomputation using the same logic as useSearchResults
-    const mockSearchInput = { title: updates.title, abstract: updates.abstract };
-    
-    // Simulate the mock data generation that useSearchResults would do
-    const mockData = {
-      publications: [
-        {
-          id: "pub1",
-          type: "publication" as const,
-          title: `Related research for: ${mockSearchInput.title}`,
-          authorsOrAssignee: ["Dr. Smith", "Dr. Johnson"],
-          year: 2023,
-          date: "2023-08-15",
-          similarity: 85,
-          similarities: [
-            "Both studies focus on similar methodology",
-            "Comparable research objectives",
-            "Similar experimental design"
-          ],
-          differences: [
-            "Different sample sizes used",
-            "Alternative data collection methods"
-          ],
-          venue: "Journal of Advanced Research",
-          citationCount: 45
-        },
-        {
-          id: "pub2", 
-          type: "publication" as const,
-          title: `Advanced study on: ${mockSearchInput.title.substring(0, 30)}...`,
-          authorsOrAssignee: ["Prof. Davis", "Dr. Wilson"],
-          year: 2022,
-          date: "2022-06-10",
-          similarity: 72,
-          similarities: [
-            "Similar theoretical framework",
-            "Comparable data analysis approach"
-          ],
-          differences: [
-            "Different geographical focus",
-            "Alternative statistical methods",
-            "Different time period studied"
-          ],
-          venue: "International Research Journal",
-          citationCount: 32
-        }
-      ],
-      patents: [
-        {
-          id: "pat1",
-          type: "patent" as const,
-          title: `Patent related to: ${mockSearchInput.title}`,
-          authorsOrAssignee: ["TechCorp Inc.", "Innovation Labs"],
-          year: 2023,
-          date: "2023-03-15",
-          similarity: 78,
-          similarities: [
-            "Similar technical approach",
-            "Comparable system architecture",
-            "Related problem domain"
-          ],
-          differences: [
-            "Different implementation details",
-            "Alternative hardware requirements"
-          ],
-          jurisdiction: "US",
-          patentWarning: false
-        }
-      ],
-      analysis: {
-        noveltyPercentage: Math.max(20, Math.min(95, 60 + Math.random() * 30)),
-        maxSimilarity: Math.max(0.3, Math.min(0.9, 0.5 + Math.random() * 0.4))
-      }
+    const backend = await fetchAnalysis({ title: updates.title, abstract: updates.abstract });
+
+    // Map backend docs to existing ResearchItem-like shape used in UI
+    const toItem = (d: BackendDocument) => {
+      const similarity = Math.round((d.score <= 1 ? d.score * 100 : d.score) || 0);
+      const year = new Date(d.publication_date).getFullYear();
+      return {
+        id: d.id,
+        type: d.type,
+        title: d.title,
+        authorsOrAssignee: d.authors || [],
+        year: Number.isFinite(year) ? year : 0,
+        date: d.publication_date,
+        similarity,
+        similarities: d.similarities || [],
+        differences: d.differences || [],
+        patentWarning: d.type === 'patent' ? (d.novelty_score !== null && d.novelty_score !== undefined ? d.novelty_score < 60 : undefined) : undefined,
+        url: d.url,
+      };
     };
 
-    const topAuthors = calculateTopAuthors(mockData.patents, mockData.publications);
-    const timeline = calculateTimeline(mockData.patents, mockData.publications);
+    const patents = backend.documents.filter(d => d.type === 'patent').map(toItem);
+    const publications = backend.documents.filter(d => d.type === 'publication').map(toItem);
+
+    const topAuthors = calculateTopAuthors(patents, publications);
+    const timeline = calculateTimeline(patents, publications);
+
+    const maxSimilarity = Math.max(0, ...[...patents, ...publications].map(i => i.similarity));
 
     const updatedResult: AnalysisResult = {
-      noveltyPercent: mockData.analysis.noveltyPercentage,
-      maxSimilarity: mockData.analysis.maxSimilarity,
-      publications: mockData.publications,
-      patents: mockData.patents,
+      noveltyPercent: Math.round(backend.novelty_score),
+      maxSimilarity,
+      publications,
+      patents,
       topAuthors,
-      timeline
+      timeline,
     };
 
-    setAnalyses(prev => prev.map(analysis => 
-      analysis.input.id === id 
+    setAnalyses(prev => prev.map(a => 
+      a.input.id === id 
         ? { input: updatedInput, result: updatedResult }
-        : analysis
+        : a
     ));
-    
+
     return { input: updatedInput, result: updatedResult };
   };
 

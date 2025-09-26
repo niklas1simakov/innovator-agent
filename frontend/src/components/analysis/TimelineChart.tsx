@@ -38,12 +38,23 @@ export const TimelineChart = ({ patents, publications, className = "" }: Timelin
 
   const chartData = prepareChartData();
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  type TooltipPayloadItem = {
+    color: string;
+    dataKey: string;
+    value: number;
+  };
+  interface TooltipProps {
+    active?: boolean;
+    payload?: TooltipPayloadItem[];
+    label?: string | number;
+  }
+
+  const CustomTooltip = ({ active, payload, label }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-popover border rounded-lg shadow-lg p-3">
           <p className="font-medium mb-2">{`Year: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry, index) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.dataKey === 'patents' ? 'Patents' : 'Publications'}: {entry.value}
             </p>

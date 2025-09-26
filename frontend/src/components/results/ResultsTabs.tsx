@@ -40,8 +40,8 @@ export const ResultsTabs = ({
         return false;
       }
       
-      // Year range filter
-      if (item.year < filters.yearRange[0] || item.year > filters.yearRange[1]) {
+      // Year range filter (ignore invalid/unknown years)
+      if (item.year > 0 && (item.year < filters.yearRange[0] || item.year > filters.yearRange[1])) {
         return false;
       }
       

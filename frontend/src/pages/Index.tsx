@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SearchInput } from "@/types/research";
 import { Analysis, AnalysisInput, ViewMode } from "@/types/analysis";
 import SearchForm from "@/components/input/SearchForm";
@@ -11,11 +11,15 @@ import { useUIState } from "@/hooks/useUIState";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>("input");
   const [isLoading, setIsLoading] = useState(false);
   const [currentInput, setCurrentInput] = useState<SearchInput | null>(null);
+  const [waitingForResults, setWaitingForResults] = useState(false);
+  const [startedLoading, setStartedLoading] = useState(false);
+  const { toast } = useToast();
   
   const {
     analyses,
@@ -39,6 +43,8 @@ const Index = () => {
   const handleSearch = (input: SearchInput) => {
     setIsLoading(true);
     setCurrentInput(input);
+    setWaitingForResults(true);
+    setStartedLoading(false);
   };
 
   // Handle selecting an analysis from sidebar
@@ -48,36 +54,64 @@ const Index = () => {
   };
 
   // Handle creating new search
-  const handleCreateNew = () => {
+  const handleCreateNew = useCallback(() => {
     clearActive();
     setViewMode("input");
-  };
+  }, [clearActive]);
 
   // Handle editing current search (back to input)
   const handleEditSearch = () => {
     setViewMode("input");
   };
 
-  // Handle when search results are ready
+  // Track when the hook enters loading for this request
   useEffect(() => {
-    if (currentInput && searchResults && !searchResults.isLoading) {
-      // Simulate loading delay to match existing behavior
-      setTimeout(() => {
-        const analysisInput: AnalysisInput = {
-          id: crypto.randomUUID(),
-          title: currentInput.title,
-          abstract: currentInput.abstract,
-          createdAt: new Date().toISOString()
-        };
-        
-        // Add to history and set as active
-        addAnalysis(analysisInput, searchResults);
-        setViewMode("results");
-        setIsLoading(false);
-        setCurrentInput(null);
-      }, 100);
+    if (waitingForResults && searchResults?.isLoading) {
+      setStartedLoading(true);
     }
-  }, [currentInput, searchResults, addAnalysis]);
+  }, [waitingForResults, searchResults?.isLoading]);
+
+  // Handle when search results are ready (successful)
+  useEffect(() => {
+    if (
+      waitingForResults &&
+      startedLoading &&
+      currentInput &&
+      searchResults &&
+      !searchResults.isLoading &&
+      !searchResults.error &&
+      (searchResults.patents.length > 0 || searchResults.publications.length > 0)
+    ) {
+      const analysisInput: AnalysisInput = {
+        id: crypto.randomUUID(),
+        title: currentInput.title,
+        abstract: currentInput.abstract,
+        createdAt: new Date().toISOString()
+      };
+
+      addAnalysis(analysisInput, searchResults);
+      setViewMode("results");
+      setIsLoading(false);
+      setCurrentInput(null);
+      setWaitingForResults(false);
+      setStartedLoading(false);
+    }
+  }, [waitingForResults, startedLoading, currentInput, searchResults, addAnalysis]);
+
+  // Handle errors
+  useEffect(() => {
+    if (waitingForResults && searchResults?.error) {
+      toast({
+        title: "Analysis failed",
+        description: searchResults.error,
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      setWaitingForResults(false);
+      setStartedLoading(false);
+      setCurrentInput(null);
+    }
+  }, [waitingForResults, searchResults?.error, toast]);
 
   // Handle updating analysis with recomputation
   const handleUpdateAnalysis = (id: string, updates: { title: string; abstract: string }) => {
@@ -124,7 +158,7 @@ const Index = () => {
 
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [toggleSidebar]);
+  }, [toggleSidebar, handleCreateNew]);
 
   // Determine what to render
   const renderContent = () => {
