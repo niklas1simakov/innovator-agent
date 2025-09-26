@@ -1,7 +1,7 @@
 [project]
-name = "2025-09-24-tum-ai-anthropic"
+name = "research-assistant-system"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-powered system for patent analysis and research intelligence"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [

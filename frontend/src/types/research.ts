@@ -8,10 +8,8 @@ export interface ResearchItem {
   similarity: number; // 0 to 100
   similarities: string[]; // 2 to 4 bullets
   differences: string[]; // 2 to 4 bullets
-  patentWarning?: boolean; // true if similarity >= 85
-  venue?: string; // for publications
-  jurisdiction?: string; // for patents
-  citationCount?: number;
+  patentWarning?: boolean; // computed from backend novelty_score
+  url?: string;
 }
 
 export interface SearchFilters {
@@ -33,6 +31,7 @@ export interface SearchResults {
   publications: ResearchItem[];
   analysis: NoveltyAnalysis;
   isLoading: boolean;
+  error?: string;
 }
 
 export interface SearchInput {

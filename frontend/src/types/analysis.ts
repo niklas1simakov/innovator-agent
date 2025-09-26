@@ -9,8 +9,8 @@ export interface AnalysisInput {
 export interface AnalysisResult {
   noveltyPercent: number;
   maxSimilarity: number;
-  publications: any[]; // ResearchItem[]
-  patents: any[]; // ResearchItem[]
+  publications: import("@/types/research").ResearchItem[];
+  patents: import("@/types/research").ResearchItem[];
   topAuthors: { name: string; score: number }[];
   timeline: { year: number; count: number; byType?: { publication: number; patent: number } }[];
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchFilters } from "@/types/research";
 import { Analysis } from "@/types/analysis";
 import HeaderStrip from "@/components/results/HeaderStrip";
@@ -28,25 +28,37 @@ export const ResultsLayout = ({
   
   const patents = analysisData.result.patents;
   const publications = analysisData.result.publications;
+  const allYears = [...patents, ...publications]
+    .map(i => i.year)
+    .filter(y => Number.isFinite(y) && y > 0);
+  const currentYear = new Date().getFullYear();
+  const minYear = allYears.length ? Math.min(...allYears) : 1900;
+  const maxYear = allYears.length ? Math.max(...allYears) : currentYear;
   
   const analysisUIState = getAnalysisUIState(analysisData.input.id);
   const abstractExpanded = analysisUIState.abstractExpanded || false;
   
-  const [patentFilters, setPatentFilters] = useState<SearchFilters>({
+  const [patentFilters, setPatentFilters] = useState<SearchFilters>(() => ({
     keyword: "",
-    yearRange: [2015, 2024],
+    yearRange: [minYear, maxYear],
     similarityThreshold: 0,
     sortBy: "similarity",
     sortOrder: "desc"
-  });
+  }));
   
-  const [publicationFilters, setPublicationFilters] = useState<SearchFilters>({
+  const [publicationFilters, setPublicationFilters] = useState<SearchFilters>(() => ({
     keyword: "",
-    yearRange: [2015, 2024],
+    yearRange: [minYear, maxYear],
     similarityThreshold: 0,
     sortBy: "similarity",
     sortOrder: "desc"
-  });
+  }));
+
+  // Reset year range when switching to a different analysis or when data range changes
+  useEffect(() => {
+    setPatentFilters(prev => ({ ...prev, yearRange: [minYear, maxYear] }));
+    setPublicationFilters(prev => ({ ...prev, yearRange: [minYear, maxYear] }));
+  }, [analysisData.input.id, minYear, maxYear]);
 
   const handleAbstractToggle = () => {
     setAbstractExpanded(analysisData.input.id, !abstractExpanded);

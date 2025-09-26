@@ -65,15 +65,13 @@ export const ResultRow = ({ item, className = "" }: ResultRowProps) => {
                 </div>
               )}
               
-              <div className="flex items-center gap-1">
-                <Hash className="h-3 w-3" />
-                {item.type === "patent" ? item.jurisdiction : item.venue}
-              </div>
-
-              {item.citationCount && (
-                <span className="text-xs">
-                  {item.citationCount} citations
-                </span>
+              {item.url && (
+                <div className="flex items-center gap-1">
+                  <ExternalLink className="h-3 w-3" />
+                  <a href={item.url} target="_blank" rel="noreferrer" className="underline underline-offset-2 truncate max-w-40">
+                    Source
+                  </a>
+                </div>
               )}
             </div>
           </div>
@@ -93,7 +91,7 @@ export const ResultRow = ({ item, className = "" }: ResultRowProps) => {
             </div>
             
             {/* Patent Warning Badge */}
-            {item.patentWarning && item.similarity >= 80 && (
+            {item.patentWarning && (
               <Badge variant="destructive" className="gap-1 text-xs">
                 <AlertTriangle className="h-3 w-3" />
                 License Risk
@@ -183,12 +181,16 @@ export const ResultRow = ({ item, className = "" }: ResultRowProps) => {
             )}
             
             {/* External Link */}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-2">
-                <ExternalLink className="h-3 w-3" />
-                View Full Document
-              </Button>
-            </div>
+            {item.url && (
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" size="sm" className="gap-2">
+                  <a href={item.url} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-3 w-3" />
+                    View Full Document
+                  </a>
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -55,7 +55,7 @@ class DocumentProcessor:
                 {'key': 'title', 'value': self.title},
                 {'key': 'abstract', 'value': self.abstract},
             ],
-            'amount': 5,
+            'amount': 3,
             'indices': ['patents', 'publications'],
         }
 
