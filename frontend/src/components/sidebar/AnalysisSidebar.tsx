@@ -252,6 +252,9 @@ export function AnalysisSidebar({
     </div>;
 }
 
+
+const fmt = (n: number) => parseFloat(n.toFixed(1));
+
 // Individual Analysis Item Component
 interface AnalysisItemProps {
   analysis: Analysis;
@@ -284,15 +287,33 @@ const AnalysisItem = ({
   return <div className={cn("group relative rounded-lg p-3 cursor-pointer transition-colors", isActive ? "bg-sidebar-accent border border-sidebar-border" : "hover:bg-sidebar-accent/50")} onClick={() => onSelect(analysis.input.id)}>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          {editingId === analysis.input.id ? <Input value={editTitle} onChange={e => onEditTitleChange(e.target.value)} onBlur={onSaveEdit} onKeyDown={e => {
-          if (e.key === 'Enter') onSaveEdit();
-          if (e.key === 'Escape') onCancelEdit();
-        }} className="h-6 px-1 py-0 text-sm border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-sidebar-ring" autoFocus onClick={e => e.stopPropagation()} /> : <h3 className="font-medium text-sm text-sidebar-foreground line-clamp-2 leading-tight">
-              {analysis.input.title}
-            </h3>}
+          {editingId === analysis.input.id ? (
+            <Input
+              value={editTitle}
+              onChange={(e) => onEditTitleChange(e.target.value)}
+              onBlur={onSaveEdit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onSaveEdit();
+                if (e.key === "Escape") onCancelEdit();
+              }}
+              className="h-6 px-1 py-0 text-sm border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-sidebar-ring"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-sm text-sidebar-foreground truncate">
+                {analysis.input.title}
+              </h3>
+              {/* Percentage next to title */}
+              <span className="text-xs font-medium text-muted-foreground">
+                {parseFloat(analysis.result.noveltyPercent.toFixed(1))}%
+              </span>
+            </div>
+          )}
           
           <div className="flex items-center gap-2 mt-2">
-            <MiniRing percentage={analysis.result.noveltyPercent} size={16} strokeWidth={2} className="shrink-0" />
+            {/* <MiniRing percentage={analysis.result.noveltyPercent} size={16} strokeWidth={2} className="shrink-0" /> */}
             <span className="text-xs text-sidebar-foreground/50">
               {timeLabel}
             </span>
