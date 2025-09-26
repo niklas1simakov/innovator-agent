@@ -71,39 +71,11 @@ async def get_signed_url(request: SignedUrlRequest) -> dict:
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            # Prepare the request parameters
-            params = {"agent_id": agent_id}
-            
-            # If context is provided, include it as an override for the agent's system prompt
-            payload = {}
-            if request.context:
-                system_prompt = (
-                    "System: You are a research assistant. The user has provided the following "
-                    "research analysis data. Use this context to answer their questions:\n\n"
-                    f"{request.context}\n\n"
-                    "User context ends. Now respond to the user's voice queries about this research data."
-                )
-                payload = {
-                    "overrides": {
-                        "system_prompt": system_prompt
-                    }
-                }
-                print(f"🤖 System prompt created: {len(system_prompt)} characters")
-                print(f"🤖 System prompt preview: {system_prompt[:300]}...")
-            
-            # Use POST if we have payload, otherwise GET
-            if payload:
-                response = await client.post(
-                    "https://api.elevenlabs.io/v1/convai/conversation/get-signed-url",
-                    params=params,
-                    json=payload,
-                    headers={"xi-api-key": api_key}
-                )
-            else:
-                response = await client.get(
-                    f"https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id={agent_id}",
-                    headers={"xi-api-key": api_key}
-                )
+            # Always GET the signed URL (POST is not allowed and returns 405)
+            response = await client.get(
+                f"https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id={agent_id}",
+                headers={"xi-api-key": api_key}
+            )
             
             if response.status_code != 200:
                 raise HTTPException(

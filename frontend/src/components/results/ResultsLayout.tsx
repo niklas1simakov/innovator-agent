@@ -132,7 +132,7 @@ export const ResultsLayout = ({
         />
       </div>
       {/* Floating Voice Assistant */}
-      <VoiceChat />
+      <VoiceChat analysis={analysisData} />
     </div>
   );
 };

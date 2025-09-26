@@ -2,6 +2,7 @@ import { useConversation } from '@elevenlabs/react';
 import { useState, useEffect } from 'react';
 import { useAnalysisHistory } from '@/hooks/useAnalysisHistory';
 import type { Analysis } from '@/types/analysis';
+import type { ResearchItem } from '@/types/research';
 import { Mic, Loader2, PhoneOff, MessageCircle } from 'lucide-react';
 
 // Helper function to format analysis data for the AI agent
@@ -24,7 +25,7 @@ function formatAnalysisContext(analysis: Analysis | null): string {
   // Publications
   if (result.publications?.length > 0) {
     context += `## Publications Found (${result.publications.length} total)\n`;
-    result.publications.slice(0, 3).forEach((pub: any, idx: number) => {
+    result.publications.slice(0, 3).forEach((pub: ResearchItem, idx: number) => {
       context += `${idx + 1}. **${pub.title}** (${pub.year}) - ${pub.similarity}% similar\n`;
       context += `   - Authors: ${pub.authorsOrAssignee?.join(', ')}\n`;
       if (pub.similarities?.length > 0) {
@@ -40,7 +41,7 @@ function formatAnalysisContext(analysis: Analysis | null): string {
   // Patents
   if (result.patents?.length > 0) {
     context += `## Patents Found (${result.patents.length} total)\n`;
-    result.patents.slice(0, 3).forEach((patent: any, idx: number) => {
+    result.patents.slice(0, 3).forEach((patent: ResearchItem, idx: number) => {
       context += `${idx + 1}. **${patent.title}** (${patent.year}) - ${patent.similarity}% similar\n`;
       context += `   - Inventors: ${patent.authorsOrAssignee?.join(', ')}\n`;
       if (patent.similarities?.length > 0) {
@@ -87,25 +88,49 @@ function formatAnalysisContext(analysis: Analysis | null): string {
   return context;
 }
 
-export function VoiceChat() {
-  const conversation = useConversation();
+export function VoiceChat({ analysis }: { analysis?: Analysis | null }) {
+  const conversation = useConversation({
+    onConnect: () => {
+      console.log('🔌 ElevenLabs conversation connected');
+      setConversationStatus('connected');
+    },
+    onDisconnect: (details) => {
+      console.log('🔌 ElevenLabs conversation disconnected', details);
+      // Use safe string for status text
+      const reason = (details && typeof details === 'object' && 'reason' in details && typeof (details as { reason?: string }).reason === 'string')
+        ? (details as { reason?: string }).reason
+        : (details && typeof details === 'object' && 'code' in details ? String((details as { code?: unknown }).code) : 'unknown');
+      setConversationStatus(`disconnected${reason ? `: ${reason}` : ''}`);
+    },
+    onError: (error) => {
+      console.error('❗ ElevenLabs conversation error', error);
+    },
+    onStatusChange: (payload) => {
+      console.log('🔄 ElevenLabs status change:', payload);
+      setConversationStatus(payload.status);
+    },
+    onDebug: (msg) => {
+      console.debug('🪲 ElevenLabs debug:', msg);
+    }
+  });
   const [microphonePermission, setMicrophonePermission] = useState<'granted' | 'denied' | 'pending'>('pending');
   const [conversationStatus, setConversationStatus] = useState<string>('Not connected');
   const { activeAnalysis, activeAnalysisId, analyses } = useAnalysisHistory();
   const [panelOpen, setPanelOpen] = useState<boolean>(false);
+  const effectiveAnalysis = analysis ?? activeAnalysis ?? null;
 
   // Debug logging for activeAnalysis
   useEffect(() => {
     console.log('🔍 VoiceChat - activeAnalysis changed:', {
-      exists: !!activeAnalysis,
-      title: activeAnalysis?.input?.title,
-      id: activeAnalysis?.input?.id,
-      createdAt: activeAnalysis?.input?.createdAt,
-      hasPublications: !!activeAnalysis?.result?.publications?.length,
-      hasPatents: !!activeAnalysis?.result?.patents?.length,
-      noveltyPercent: activeAnalysis?.result?.noveltyPercent
+      exists: !!effectiveAnalysis,
+      title: effectiveAnalysis?.input?.title,
+      id: effectiveAnalysis?.input?.id,
+      createdAt: effectiveAnalysis?.input?.createdAt,
+      hasPublications: !!effectiveAnalysis?.result?.publications?.length,
+      hasPatents: !!effectiveAnalysis?.result?.patents?.length,
+      noveltyPercent: effectiveAnalysis?.result?.noveltyPercent
     });
-  }, [activeAnalysis]);
+  }, [effectiveAnalysis]);
 
   // Also log the useAnalysisHistory hook data
   useEffect(() => {
@@ -155,7 +180,11 @@ export function VoiceChat() {
         console.log('🔍 ActiveAnalysis is undefined:', activeAnalysis === undefined);
         
         // Prepare analysis context for the AI agent
-        const analysisContext = formatAnalysisContext(activeAnalysis);
+        const analysisContext = formatAnalysisContext(effectiveAnalysis);
+        const MAX_CONTEXT_CHARS = 8000;
+        const trimmedContext = analysisContext.length > MAX_CONTEXT_CHARS
+          ? analysisContext.slice(0, MAX_CONTEXT_CHARS)
+          : analysisContext;
         console.log('🧪 Analysis context prepared:', analysisContext.substring(0, 200) + '...');
         console.log('🧪 Full analysis context length:', analysisContext.length, 'characters');
         console.log('🧪 FULL ANALYSIS CONTEXT:');
@@ -163,16 +192,16 @@ export function VoiceChat() {
         
         // Client - Get signed URL from backend with analysis context
         console.log('📡 Fetching signed URL from backend...');
-        const requestBody = activeAnalysis ? { context: analysisContext } : {};
-        console.log('📡 Request body:', activeAnalysis ? 'Contains context' : 'No context');
-        console.log('📡 ActiveAnalysis exists:', !!activeAnalysis);
+        const requestBody = effectiveAnalysis ? { context: analysisContext } : {};
+        console.log('📡 Request body:', effectiveAnalysis ? 'Contains context' : 'No context');
+        console.log('📡 EffectiveAnalysis exists:', !!effectiveAnalysis);
         
-        if (activeAnalysis) {
+        if (effectiveAnalysis) {
           console.log('📊 ActiveAnalysis details:', {
-            title: activeAnalysis.input.title,
-            publicationsCount: activeAnalysis.result.publications?.length || 0,
-            patentsCount: activeAnalysis.result.patents?.length || 0,
-            noveltyPercent: activeAnalysis.result.noveltyPercent
+            title: effectiveAnalysis.input.title,
+            publicationsCount: effectiveAnalysis.result.publications?.length || 0,
+            patentsCount: effectiveAnalysis.result.patents?.length || 0,
+            noveltyPercent: effectiveAnalysis.result.noveltyPercent
           });
         }
         
@@ -195,7 +224,7 @@ export function VoiceChat() {
         const signedUrl = responseData.signed_url;
         console.log('Received signed URL:', signedUrl.substring(0, 50) + '...');
         
-        if (activeAnalysis) {
+        if (effectiveAnalysis) {
           console.log('Analysis context sent to voice agent successfully');
         } else {
           console.log('No analysis context available - voice agent will work without research data');
@@ -211,11 +240,16 @@ export function VoiceChat() {
         try {
           conversationResult = await conversation.startSession({
             signedUrl,
-            connectionType: "websocket",
+            connectionType: "websocket"
           });
           console.log('Conversation started successfully:', conversationResult);
           
-
+          // Send context after connection to avoid large-init disconnects
+          if (effectiveAnalysis) {
+            conversation.sendContextualUpdate(trimmedContext);
+            console.log('📨 Sent contextual update to agent. Length:', trimmedContext.length);
+          }
+        
         } catch (sessionError) {
           console.error('Session start error:', sessionError);
           setConversationStatus('Connection failed');
