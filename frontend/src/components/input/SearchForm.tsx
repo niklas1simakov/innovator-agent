@@ -30,12 +30,7 @@ export const SearchForm = ({ onSubmit, isLoading = false, className = "" }: Sear
     <Card className={`w-full max-w-4xl bg-gradient-to-br from-card to-accent/20 shadow-lg border-0 ${className}`}>
       <CardHeader className="text-center pb-6">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="p-3 rounded-full bg-primary/10">
-            <FileText className="h-8 w-8 text-primary" />
-          </div>
-          <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            Valorize.ai
-          </CardTitle>
+          <img src="/logo.png" alt="App logo" className="h-10 w-auto" />
         </div>
         <p className="text-muted-foreground text-lg">
           Analyze your research for novelty by comparing against existing patents and publications
