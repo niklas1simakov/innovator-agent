@@ -36,8 +36,8 @@ uv sync
 
 Create a copy of the [.env.example](.env.example) file in the root directory and add the required variables:
 - ANTHROPIC_API_KEY: Your [Anthropic API key](https://console.anthropic.com/)
-- CONSUMER_KEY: Your [EPO API](https://developers.epo.org/) consumer key
-- CONSUMER_SECRET: Your [EPO API](https://developers.epo.org/) consumer secret
+- EPO_API_KEY: Your [EPO API](https://developers.epo.org/) consumer key
+- EPO_API_SECRET: Your [EPO API](https://developers.epo.org/) consumer secret
 - API_KEY_LOGIC_MILL: Your [Logic Mill API key](https://logic-mill.net/)
 
 ### Running the application

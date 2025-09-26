@@ -39,14 +39,14 @@ class PatentLoader:
 
     def _get_access_token(self) -> str:
         """Get access token from EPO API."""
-        consumer_key = os.getenv('CONSUMER_KEY')
-        consumer_secret = os.getenv('CONSUMER_SECRET')
+        epo_api_key = os.getenv('EPO_API_KEY')
+        epo_api_secret = os.getenv('EPO_API_SECRET')
 
-        if not consumer_key or not consumer_secret:
-            raise ValueError('CONSUMER_KEY and CONSUMER_SECRET must be set in environment variables')
+        if not epo_api_key or not epo_api_secret:
+            raise ValueError('EPO_API_KEY and EPO_API_SECRET must be set in environment variables')
 
         token_url = 'https://ops.epo.org/3.2/auth/accesstoken'
-        response = requests.post(token_url, data={'grant_type': 'client_credentials'}, auth=(consumer_key, consumer_secret))
+        response = requests.post(token_url, data={'grant_type': 'client_credentials'}, auth=(epo_api_key, epo_api_secret))
 
         if response.status_code == HTTP_OK:
             token_data = response.json()
