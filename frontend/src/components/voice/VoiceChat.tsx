@@ -2,6 +2,7 @@ import { useConversation } from '@elevenlabs/react';
 import { useState, useEffect } from 'react';
 import { useAnalysisHistory } from '@/hooks/useAnalysisHistory';
 import type { Analysis } from '@/types/analysis';
+import { Mic, Loader2, PhoneOff, MessageCircle } from 'lucide-react';
 
 // Helper function to format analysis data for the AI agent
 function formatAnalysisContext(analysis: Analysis | null): string {
@@ -91,6 +92,7 @@ export function VoiceChat() {
   const [microphonePermission, setMicrophonePermission] = useState<'granted' | 'denied' | 'pending'>('pending');
   const [conversationStatus, setConversationStatus] = useState<string>('Not connected');
   const { activeAnalysis, activeAnalysisId, analyses } = useAnalysisHistory();
+  const [panelOpen, setPanelOpen] = useState<boolean>(false);
 
   // Debug logging for activeAnalysis
   useEffect(() => {
@@ -238,62 +240,76 @@ export function VoiceChat() {
     }
   };
 
+  const isConnected = conversation.status === 'connected';
+  const isConnecting = conversation.status === 'connecting' || conversationStatus.toLowerCase().includes('connecting');
+  const isSpeaking = conversation.isSpeaking && isConnected;
+
   return (
-    <div className="voice-chat">
-      {/* Add your voice interaction UI here */}
-      <div className="flex flex-col items-center gap-4">
-        {microphonePermission === 'pending' && (
-          <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-blue-800 mb-2">
-              🎙️ Voice conversations require microphone access to hear and respond to your questions.
-            </p>
-            <p className="text-sm text-blue-600">
-              Your audio will be processed securely and used only for this conversation.
-            </p>
+    <div className="fixed bottom-6 right-6 z-50">
+      {panelOpen && (
+        <div className="mb-3 w-80 rounded-xl border bg-white p-4 shadow-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4 text-blue-600" />
+                <p className="text-sm font-medium">Voice Research Assistant</p>
+              </div>
+              <p className="mt-1 text-xs text-gray-500" aria-live="polite">Status: {conversationStatus}</p>
+              {isSpeaking && (
+                <p className="mt-1 text-xs text-green-600">🔊 Agent is speaking…</p>
+              )}
+              {microphonePermission === 'pending' && (
+                <p className="mt-2 text-xs text-blue-600">We need microphone access to chat.</p>
+              )}
+              {microphonePermission === 'denied' && (
+                <p className="mt-2 text-xs text-red-600">Microphone access denied. Enable it in your browser settings.</p>
+              )}
+            </div>
+            {isConnected && (
+              <button
+                onClick={() => {
+                  conversation.endSession();
+                  setConversationStatus('Disconnected');
+                  setTimeout(() => {
+                    if (conversation.status === 'disconnected') {
+                      setConversationStatus('Disconnected - Ready to start again');
+                    }
+                  }, 100);
+                }}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
+                aria-label="End conversation"
+              >
+                <PhoneOff className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        )}
-        
-        {microphonePermission === 'denied' && (
-          <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
-            <p className="text-red-800">
-              ❌ Microphone access was denied. Please enable it in your browser settings to use voice chat.
-            </p>
-          </div>
-        )}
-
-        {/* Conversation Status */}
-        <div className="text-center p-2 bg-gray-100 rounded border">
-          <p className="text-sm font-medium">Status: {conversationStatus}</p>
-          {conversation.isSpeaking && conversation.status === 'connected' && (
-            <p className="text-green-600">🔊 Agent is speaking...</p>
-          )}
         </div>
-
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={handleStartConversation}
-            disabled={microphonePermission === 'denied'}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            {microphonePermission === 'pending' ? 'Request Microphone & Start' : 'Start Conversation'}
-          </button>
-          <button 
-            onClick={() => {
-              conversation.endSession();
-              setConversationStatus('Disconnected');
-              // Force update the conversation status to ensure speaking state is cleared
-              setTimeout(() => {
-                if (conversation.status === 'disconnected') {
-                  setConversationStatus('Disconnected - Ready to start again');
-                }
-              }, 100);
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          >
-            End Conversation
-          </button>
-        </div>
-      </div>
+      )}
+      <button
+        onClick={async () => {
+          if (!isConnected && microphonePermission !== 'denied') {
+            await handleStartConversation();
+            setPanelOpen(true);
+          } else {
+            setPanelOpen((prev) => !prev);
+          }
+        }}
+        disabled={microphonePermission === 'denied'}
+        className={`group relative inline-flex items-center gap-2 rounded-full px-4 py-3 text-white shadow-lg transition focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:cursor-not-allowed ${
+          isConnected ? 'bg-green-600 hover:bg-green-700' : isConnecting ? 'bg-blue-500 hover:bg-blue-600' : 'bg-blue-600 hover:bg-blue-700'
+        }`}
+        aria-label={isConnected ? 'Voice assistant active' : 'Start voice assistant'}
+      >
+        <span className={`absolute -right-1 -top-1 h-3 w-3 rounded-full ${isConnected ? 'bg-green-300 animate-ping' : 'bg-transparent'}`} />
+        {isConnecting ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : (
+          <Mic className="h-5 w-5" />
+        )}
+        <span className="text-sm font-medium">
+          {isConnected ? 'Listening' : isConnecting ? 'Connecting…' : 'Ask with voice'}
+        </span>
+      </button>
     </div>
   );
 }
