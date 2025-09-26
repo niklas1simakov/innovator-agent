@@ -169,20 +169,13 @@ export function AnalysisSidebar({
       <div className="p-6 border-b border-sidebar-border">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <FileText className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-bold text-lg text-sidebar-foreground">Valorize.ai</h1>
-              <p className="text-xs text-sidebar-foreground/60">Prototype – frontend only</p>
-            </div>
+            <img src="/logo.png" alt="App logo" className="h-8 w-auto" />
           </div>
-          
           <Button variant="ghost" size="icon" onClick={onToggleCollapse} className="h-8 w-8 text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent">
             <PanelLeftClose className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <Button onClick={onCreateNew} className="w-full mt-4 gap-2 bg-primary text-primary-foreground hover:bg-primary/90" size="sm">
           <FilePlus className="h-4 w-4" />
           New Search
