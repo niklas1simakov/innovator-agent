@@ -3,7 +3,8 @@ import { SearchResults, SearchInput, ResearchItem } from "@/types/research";
 import { fetchAnalysis, BackendAnalysisResponse, BackendDocument } from "@/lib/api";
 
 function toResearchItem(doc: BackendDocument): ResearchItem {
-  const similarity0to100 = Math.round((doc.score <= 1 ? doc.score * 100 : doc.score));
+  const score = 100 - doc.novelty_score;
+  const similarity0to100 = Math.round((score <= 1 ? score * 100 : score));
   const year = new Date(doc.publication_date).getFullYear();
 
   return {
