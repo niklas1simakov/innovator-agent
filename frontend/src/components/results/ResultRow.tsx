@@ -82,12 +82,12 @@ export const ResultRow = ({ item, className = "" }: ResultRowProps) => {
               <div className={`text-sm font-medium ${getSimilarityColor(item.similarity)}`}>
                 {item.similarity}%
               </div>
-              <div className="w-20">
+              {/* <div className="w-20">
                 <Progress 
                   value={item.similarity} 
                   className={`h-1 ${getSimilarityBg(item.similarity)}`}
                 />
-              </div>
+              </div> */}
             </div>
             
             {/* Patent Warning Badge */}
