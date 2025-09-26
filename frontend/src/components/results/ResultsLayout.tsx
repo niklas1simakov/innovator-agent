@@ -8,6 +8,7 @@ import { AbstractViewer } from "@/components/results/AbstractViewer";
 import { EditAbstractDialog } from "@/components/results/EditAbstractDialog";
 import { useUIState } from "@/hooks/useUIState";
 import { useToast } from "@/hooks/use-toast";
+import { VoiceChat } from "@/components/voice/VoiceChat";
 
 interface ResultsLayoutProps {
   analysis: Analysis;
@@ -130,6 +131,8 @@ export const ResultsLayout = ({
           onSave={handleSaveEdit}
         />
       </div>
+      {/* Floating Voice Assistant */}
+      <VoiceChat analysis={analysisData} />
     </div>
   );
 };

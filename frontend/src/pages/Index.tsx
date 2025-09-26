@@ -164,7 +164,7 @@ const Index = () => {
   const renderContent = () => {
     if (viewMode === "input") {
       return (
-        <div className="flex-1 flex items-center justify-center p-4">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-8">
           <SearchForm 
             onSubmit={handleSearch} 
             isLoading={isLoading}
@@ -176,20 +176,23 @@ const Index = () => {
 
     if (activeAnalysis) {
       return (
-        <div className="flex-1">
-          <ResultsLayout 
-            analysis={activeAnalysis}
-            onEditSearch={handleEditSearch}
-            onUpdateAnalysis={handleUpdateAnalysis}
-            onCreateNewAnalysis={handleCreateNewAnalysis}
-          />
+        <div className="flex-1 flex flex-col">
+          <div className="flex-1">
+            <ResultsLayout 
+              analysis={activeAnalysis}
+              onEditSearch={handleEditSearch}
+              onUpdateAnalysis={handleUpdateAnalysis}
+              onCreateNewAnalysis={handleCreateNewAnalysis}
+            />
+          </div>
+          
         </div>
       );
     }
 
     // Fallback to input if no active analysis
     return (
-      <div className="flex-1 flex items-center justify-center p-4">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 gap-8">
         <SearchForm 
           onSubmit={handleSearch} 
           isLoading={isLoading}

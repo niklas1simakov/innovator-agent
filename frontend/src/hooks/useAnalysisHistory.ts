@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocalStorage } from "./useLocalStorage";
 import { Analysis, AnalysisInput, AnalysisResult } from "@/types/analysis";
 import { SearchResults, ResearchItem } from "@/types/research";
@@ -54,8 +54,27 @@ export function useAnalysisHistory() {
   const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
 
   const activeAnalysis = analyses.find(a => a.input.id === activeAnalysisId) || null;
+  
+  // Debug logging for activeAnalysis calculation
+  useEffect(() => {
+    console.log('🔍 useAnalysisHistory - activeAnalysis calculation:', {
+      activeAnalysisId,
+      analysesCount: analyses.length,
+      analysisIds: analyses.map(a => a.input.id),
+      foundAnalysis: !!activeAnalysis,
+      activeAnalysisTitle: activeAnalysis?.input.title
+    });
+  }, [activeAnalysisId, analyses, activeAnalysis]);
 
   const addAnalysis = (input: AnalysisInput, searchResults: SearchResults) => {
+    console.log('🔍 addAnalysis called with:', {
+      input,
+      searchResults,
+      publicationsCount: searchResults.publications?.length || 0,
+      patentsCount: searchResults.patents?.length || 0,
+      hasAnalysis: !!searchResults.analysis
+    });
+
     const topAuthors = calculateTopAuthors(searchResults.patents, searchResults.publications);
     const timeline = calculateTimeline(searchResults.patents, searchResults.publications);
 
@@ -70,7 +89,15 @@ export function useAnalysisHistory() {
 
     const analysis: Analysis = { input, result };
     
-    setAnalyses(prev => [analysis, ...prev]);
+    console.log('🔍 Created analysis:', analysis);
+    
+    setAnalyses(prev => {
+      const newAnalyses = [analysis, ...prev];
+      console.log('🔍 Setting analyses to:', newAnalyses);
+      return newAnalyses;
+    });
+    
+    console.log('🔍 Setting activeAnalysisId to:', input.id);
     setActiveAnalysisId(input.id);
     
     return analysis;
